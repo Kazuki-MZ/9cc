@@ -117,7 +117,7 @@ Token *tokenize(char *p) {
 
 //抽象構文木のノードの型
 typedef enum {
-    NO_ADD, //+
+    ND_ADD, //+
     ND_SUB, //-
     ND_MUL, //*
     ND_DIV, // /
@@ -184,6 +184,37 @@ Node *expr() {
       node = new_node(ND_SUB, node, mul());
     else
       return node;
+  }
+}
+
+int global_register_count = 2;
+void gen(Node *node) {
+  if (node->kind == ND_NUM) {
+    printf(" mov w%d, %d\n", global_register_count, node->val);
+    printf(" str w%d, [sp, #-16]!\n", global_register_count);
+    global_register_count++;
+    return;
+  }
+
+  gen(node->lhs);
+  gen(node->rhs);
+
+  printf(" ldr w1, [sp], #16\n");
+  printf(" ldr w0, [sp], #16\n");
+
+  switch (node->kind) {
+    case ND_ADD:
+      printf(" add w0, w0, w1\n");
+      break;
+    case ND_SUB:
+      printf(" sub w0, w0, w1\n");
+      break;
+    case ND_MUL:
+      printf(" mul w0, w0, w1\n");
+      break;
+    case ND_DIV:
+      printf(" sdiv w0, w0, w1\n");
+      break;
   }
 }
 

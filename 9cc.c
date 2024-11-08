@@ -22,6 +22,28 @@ struct Token {
   char *str;      //トークン文字列
 };
 
+//抽象構文木のノードの型
+typedef enum {
+    ND_ADD, //+
+    ND_SUB, //-
+    ND_MUL, //*
+    ND_DIV, // /
+  ND_NUM, // 整数
+} NodeKind;
+
+typedef struct Node Node;
+
+Node *expr();
+
+
+//抽象構文木のノードの型
+struct Node {
+  NodeKind kind; //ノードの型
+  Node *lhs; //左辺
+  Node *rhs; //右辺
+  int val; //kindがNO_NUMの場合のみ使う
+};
+
 //現在注目しているトークン
 Token *token;
 
@@ -43,9 +65,19 @@ void error_at(char *loc, char *fmt, ...) {
   exit(1);
 }
 
+// エラーを報告するための関数
+// printfと同じ引数を取る
+void error(char *fmt, ...) {
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  fprintf(stderr, "\n");
+  exit(1);
+}
+
 //次のトークンが期待している記号のときには、トークンを1つ読み進めて
 //真を返す。それ以外の場合には偽をけ返す。
-bool cunsume(char op) {
+bool consume(char op) {
   if (token->kind != TK_RESERVED || token->str[0] != op)
     return false;
   token = token->next;
@@ -115,24 +147,6 @@ Token *tokenize(char *p) {
   return head.next;
 }
 
-//抽象構文木のノードの型
-typedef enum {
-    ND_ADD, //+
-    ND_SUB, //-
-    ND_MUL, //*
-    ND_DIV, // /
-  ND_NUM, // 整数
-} NodeKind;
-
-typedef struct Node Node;
-
-//抽象構文木のノードの型
-struct Node {
-  NodeKind kind; //ノードの型
-  Node *lhs; //左辺
-  Node *rhs; //右辺
-  int val; //kindがNO_NUMの場合のみ使う
-};
 
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs) {
   Node *node = calloc(1, sizeof(Node));
@@ -179,7 +193,7 @@ Node *expr() {
 
   for (;;) {
     if (consume('+'))
-      node = new_node(NO_ADD, node, mul());
+      node = new_node(ND_ADD, node, mul());
     else if (consume('-'))
       node = new_node(ND_SUB, node, mul());
     else
@@ -187,12 +201,12 @@ Node *expr() {
   }
 }
 
-int global_register_count = 2;
+int global_register_count = 0;
 void gen(Node *node) {
   if (node->kind == ND_NUM) {
     printf(" mov w%d, %d\n", global_register_count, node->val);
     printf(" str w%d, [sp, #-16]!\n", global_register_count);
-    global_register_count++;
+    // global_register_count;
     return;
   }
 
@@ -216,38 +230,28 @@ void gen(Node *node) {
       printf(" sdiv w0, w0, w1\n");
       break;
   }
+  printf(" str w0, [sp, #-16]!\n");
 }
 
 int main(int argc, char **argv) {
   if (argc != 2) {
-    error_at(token->str, "引数の個数が正しくありません");
+    error("引数の個数が正しくありません");
     return 1;
   }
 
-  //トークナイズする
+  //トークナイズしてパースする
   user_input = argv[1];
   token = tokenize(argv[1]);
+  Node *node = expr();
 
   //アセンブリの前半部分を出力
   printf(".globl main\n");
   printf("main:\n");
 
-  //式の最初は数でなければならないので、それをチェックして
-  //最初のmov命令を出力
-  printf(" mov w0, %d\n", expect_number());
+  //抽象構文木を下りながらコード生成
+  gen(node);
 
-  //'+<数>’あるいは`-,数`というトークンの並びを消費しつつ
-  //アセンブリを出力
-  while (!at_eof()) {
-    if (cunsume('+')) {
-      printf(" add w0, w0, %d\n", expect_number());
-      continue;
-    }
-
-    expect('-');
-    printf( " sub w0, w0, #%d\n", expect_number());
-  }
-
+  //スタックトップに式全体の値が残っているはずなので
   printf(" ret\n");
   return 0;
 }

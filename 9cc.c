@@ -20,6 +20,7 @@ struct Token {
   Token *next;    //次の入力トークン
   int val;        //kindがTK_NUMの場合、その数値
   char *str;      //トークン文字列
+  int len;        //トークンの長さ
 };
 
 //抽象構文木のノードの型
@@ -79,7 +80,10 @@ void error(char *fmt, ...) {
 //次のトークンが期待している記号のときには、トークンを1つ読み進めて
 //真を返す。それ以外の場合には偽をけ返す。
 bool consume(char op) {
-  if (token->kind != TK_RESERVED || token->str[0] != op)
+  if (token->kind != TK_RESERVED ||
+      strlen(op) != token->len ||
+      //メモリーコンペア  
+      memcmp(token->str, op, token->len))
     return false;
   token = token->next;
   return true;
@@ -175,7 +179,7 @@ Node *primary() {
   //そうでなければ数値のはず
   return new_node_num(expect_number());
 }
-
+`
 Node *unary() {
   if (consume('+'))
     return primary();

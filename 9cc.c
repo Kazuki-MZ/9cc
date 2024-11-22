@@ -29,14 +29,22 @@ typedef enum {
     ND_SUB, //-
     ND_MUL, //*
     ND_DIV, // /
-  ND_NUM, // 整数
+    ND_NUM, // 整数
+    ND_EQ, // ==
+    ND_NE, // !=
+    ND_LT, // <
+    ND_LTE, // <=
 } NodeKind;
 
 typedef struct Node Node;
 
-Node *expr();
-bool consume(char op);
+Node *add();
+bool consume(char *op);
 Node *unary();
+Node *mul();
+Node *relational();
+Node *equality();
+
 
 //抽象構文木のノードの型
 struct Node {
@@ -79,7 +87,7 @@ void error(char *fmt, ...) {
 
 //次のトークンが期待している記号のときには、トークンを1つ読み進めて
 //真を返す。それ以外の場合には偽をけ返す。
-bool consume(char op) {
+bool consume(char *op) {
   if (token->kind != TK_RESERVED ||
       strlen(op) != token->len ||
       //メモリーコンペア  
@@ -168,18 +176,22 @@ Node *new_node_num(int val) {
   return node;
 }
 
+Node *expr() {
+  return equality();
+}
+
 Node *primary() {
   //次のトークンが"("なら、 "(" expr ")"のはず
-  if (consume('(')) {
+  if (consume("(")) {
     Node *node = expr();
-    expect(')');
+    expect(")");
     return node;
   }
 
   //そうでなければ数値のはず
   return new_node_num(expect_number());
 }
-`
+
 Node *unary() {
   if (consume('+'))
     return primary();
@@ -201,7 +213,7 @@ Node *mul() {
   }
 }
 
-Node *expr() {
+Node *add() {
   Node *node = mul();
 
   for (;;) {
@@ -209,6 +221,36 @@ Node *expr() {
       node = new_node(ND_ADD, node, mul());
     else if (consume('-'))
       node = new_node(ND_SUB, node, mul());
+    else
+      return node;
+  }
+}
+
+Node *relational() {
+  Node *node = add();
+
+  for (;;) {
+    if (consume('<'))
+      node = new_node(ND_LT, node, add());
+    else if (consume('<='))
+      node = new_node(ND_LTE, node, add());
+    else if (consume('>'))
+      node = new_node(ND_LT, add(), node);
+    else if (consume('>='))
+      node = new_node(ND_LTE, add(), node);
+    else
+      return node;
+  }
+}
+
+Node *equality() {
+  Node *node = relational();
+
+  for (;;) {
+    if (consume('=='))
+      node = new_node(ND_EQ, node, relational());
+    else if (consume('!='))
+      node = new_node(ND_NE, node, relational());
     else
       return node;
   }

@@ -303,6 +303,22 @@ void gen(Node *node) {
     case ND_DIV:
       printf(" sdiv w0, w0, w1\n");
       break;
+    case ND_EQ:
+      printf(" cmp w0, w1\n");
+      printf(" cset w0, eq\n");
+      break;
+    case ND_NE:
+      printf(" cmp w0, w1\n");
+      printf(" cset w0, ne\n");
+      break;
+    case ND_LT:
+      printf(" cmp w0, w1\n");
+      printf(" cset w0, lt\n");
+      break;
+    case ND_LTE:
+      printf(" cmp w0, w1\n");
+      printf(" cset w0, le\n");
+      break;
   }
   printf(" str w0, [sp, #-16]!\n");
 }

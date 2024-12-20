@@ -3,7 +3,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include "main.c"
+#include <ctype.h>
+
+
+
+char *user_input;
+Token *token;
 
 //エラー箇所を報告する
 void error_at(char *loc, char *fmt, ...) {
@@ -41,7 +46,7 @@ bool consume(char *op) {
   return true;
 }
 
-//次の次のトークンが期待している記号のときには、トークンを1つ読み進める。
+//次の次のトー���ンが期待している記号のときには、トークンを1つ読み進める。
 //それ以外の場合にはエラーを報告する。
 void expect(char *op) {
   if (token->kind != TK_RESERVED || strlen(op) != token->len ||
@@ -112,6 +117,12 @@ Token *tokenize(char *p) {
       char *q = p;
       cur->val = strtol(p, &p, 10);
       cur->len = p - q;
+      continue;
+    }
+
+    if ('a' <= *p && *p <= 'z') {
+      cur = new_token(TK_IDENT, cur, p++, 1);
+      cur->len = 1;
       continue;
     }
     // printf("foo");

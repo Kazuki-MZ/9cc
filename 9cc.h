@@ -1,4 +1,5 @@
 #include <stdbool.h>
+#include <stdio.h>
 
 typedef struct Node Node;
 
@@ -6,6 +7,7 @@ typedef enum {
   TK_RESERVED,
   TK_NUM,
   TK_EOF,
+  TK_IDENT, // 識別子
 } TokenKind;
 
 typedef struct Token Token;
@@ -47,3 +49,8 @@ Node *unary();
 Node *mul();
 Node *relational();
 Node *equality();
+void error(char *fmt, ...);
+void error_at(char *loc, char *fmt, ...);
+Token *tokenize(char *p);
+Node *expr();
+void gen(Node *node);

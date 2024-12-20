@@ -45,6 +45,9 @@ void gen(Node *node) {
       printf(" cmp w0, w1\n");
       printf(" cset w0, le\n");
       break;
+    case ND_NUM:
+      // no op
+      break;
   }
   printf(" str w0, [sp, #-16]!\n");
 }

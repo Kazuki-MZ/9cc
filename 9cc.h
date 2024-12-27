@@ -54,3 +54,6 @@ void error_at(char *loc, char *fmt, ...);
 Token *tokenize(char *p);
 Node *expr();
 void gen(Node *node);
+
+extern char *user_input;
+extern Token *token;

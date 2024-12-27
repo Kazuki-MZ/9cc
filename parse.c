@@ -7,9 +7,6 @@
 
 
 
-char *user_input;
-Token *token;
-
 //エラー箇所を報告する
 void error_at(char *loc, char *fmt, ...) {
   va_list ap;

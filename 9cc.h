@@ -22,6 +22,7 @@ typedef enum {
     ND_NE, // !=
     ND_LT, // <
     ND_LTE, // <=
+    ND_ASSIGN, // =
 } NodeKind;
 
 typedef struct Node Node;
@@ -43,16 +44,21 @@ struct Node {
   int val; //kindがNO_NUMの場合のみ使う
 };
 
-Node *add();
-bool consume(char *op);
-Node *unary();
-Node *mul();
-Node *relational();
+Node *program();
+Node *stmt();
+Node *expr();
+Node *assign();
 Node *equality();
+Node *relational();
+Node *add();
+Node *mul();
+Node *unary();
+Node *primary();
+bool consume(char *op);
 void error(char *fmt, ...);
 void error_at(char *loc, char *fmt, ...);
 Token *tokenize(char *p);
-Node *expr();
+
 void gen(Node *node);
 
 extern char *user_input;
